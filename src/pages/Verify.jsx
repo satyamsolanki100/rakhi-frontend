@@ -9,22 +9,38 @@ export default function Verify() {
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(60);
 
-  const sendOtp = () => {
+  // ✅ INIT EMAILJS (IMPORTANT)
+  useEffect(() => {
+    emailjs.init("9uR4u735QODLLIAas"); // your PUBLIC KEY
+  }, []);
+
+  const sendOtp = async () => {
+    if (!user?.email) {
+      alert("User email missing");
+      navigate("/");
+      return;
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     localStorage.setItem("rakhi_otp", code);
 
-    emailjs.send(
-      "service_lsa5cag",
-      "template_2a6mt9p",
-      {
-        to_email: user.email,
-        to_name: user.name,
-        otp: code,
-      },
-      "9uR4u735QODLLIAas"
-    );
+    try {
+      const res = await emailjs.send(
+        "service_lsa5cag", // SERVICE ID
+        "template_2a6mt9p", // TEMPLATE ID
+        {
+          to_email: user.email,
+          to_name: user.name,
+          otp: code,
+        },
+      );
 
-    setTimer(60); // reset timer on resend
+      console.log("OTP sent:", res.status);
+      setTimer(60);
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      alert("OTP failed to send. Check EmailJS settings.");
+    }
   };
 
   useEffect(() => {
@@ -53,7 +69,6 @@ export default function Verify() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
-      {/* Background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       <div className="relative z-10 w-full max-w-sm bg-white/5 border border-white/10 rounded-xl p-6">
@@ -79,7 +94,6 @@ export default function Verify() {
           OTP expires in {timer}s
         </p>
 
-        {/* ✅ RESEND OTP BUTTON */}
         {timer === 0 && (
           <button
             onClick={sendOtp}
